@@ -40,3 +40,19 @@ def elbow_plot(data_preprocessed, distance_gower, max_clusters):
     plt.xticks(range(1,max_clusters))
     plt.grid()
     plt.show()
+
+
+# def silhouette_plot(distance_matrix, cluster_sizes):
+#     ### plot silhouette plot for agglomerative clustering
+#     l = len(cluster_sizes)
+#     fig, ax = plt.subplots(1, l, figsize=(15,8))
+#     q = 0
+#     for i in cluster_sizes:
+#         # Create AgglomerativeClustering instances for different number of clusters
+#         clustering = AgglomerativeClustering(n_clusters=i,  metric='precomputed', linkage='average', compute_distances=True).fit(distance_matrix)
+#         # Fit the visualizer
+#         visualizer = SilhouetteVisualizer(clustering, colors='yellowbrick', ax=ax[q])
+#         # title for subplot
+#         ax[q].set_title('Silhouette plot for '+str(i)+' clusters')
+#         visualizer.fit(distance_matrix)
+#         q += 1
