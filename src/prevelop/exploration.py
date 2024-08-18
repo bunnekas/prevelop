@@ -1,0 +1,6 @@
+### Prevelop
+### Author: Kaspar Bunne
+
+import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
+import seaborn as sns
