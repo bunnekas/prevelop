@@ -1,2 +1,0 @@
-[console_scripts]
-cool-script = my_cool_project.cli:main
