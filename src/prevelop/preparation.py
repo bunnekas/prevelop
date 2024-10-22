@@ -22,10 +22,10 @@ def load_data(file):
 def clear_cad_data(data):
     ### clear cad-data: drop duplicates, drop rows with missing values, rename columns, delete substrings from columns
     # rename column Benennung (CAD) to Zeichnung
-    data = data[['Benennung (CAD)', 'Klasse', 'Volumen [mm3]', 'Masse [kg]',
-       'Flächeninhalt [mm2]', 'L [mm]', 'B [mm]', 'H [mm]', 'Lrot [mm]',
-       'Da max. [mm]', 'Di min. [mm]']]
     if 'Benennung (CAD)' in data.columns:
+        data = data[['Benennung (CAD)', 'Klasse', 'Volumen [mm3]', 'Masse [kg]',
+                'Flächeninhalt [mm2]', 'L [mm]', 'B [mm]', 'H [mm]', 'Lrot [mm]',
+                'Da max. [mm]', 'Di min. [mm]']]
         data = data.rename(columns={"Benennung (CAD)": "Zeichnung"})
         data = data.dropna(subset=["Zeichnung"])
     columns = ['Volumen [mm3]','Masse [kg]','Flächeninhalt [mm2]','L [mm]','B [mm]', 'H [mm]','Lrot [mm]','Da max. [mm]','Di min. [mm]']
