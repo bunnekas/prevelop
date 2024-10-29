@@ -94,3 +94,5 @@ def preprocessing(data, num_columns, bin_columns, cat_columns):
     # concatenate the subdataframes columnwise
     data_preprocessed = pd.concat([df_num_scaled, df_cat_encoded, df_bin], axis=1)
     return data_preprocessed
+
+#test
