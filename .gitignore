@@ -1,2 +1,3 @@
 src\PrEvelOp.egg-info\
 src\prevelop\__pycache__\
+*.DS_Store
