@@ -28,6 +28,8 @@ def clear_cad_data(data):
                 'Da max. [mm]', 'Di min. [mm]']]
         data = data.rename(columns={"Benennung (CAD)": "Zeichnung"})
         data = data.dropna(subset=["Zeichnung"])
+    if 'Key' in data.columns:
+        data = data.rename(columns={"Key": "Zeichnung"})
     columns = ['Volumen [mm3]','Masse [kg]','Flächeninhalt [mm2]','L [mm]','B [mm]', 'H [mm]','Lrot [mm]','Da max. [mm]','Di min. [mm]']
     # if col in columns is not in data.columns
     for col in columns:
