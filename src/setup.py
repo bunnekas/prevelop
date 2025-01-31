@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="PrEvelOp",
-    version="1.0.4",
+    version="1.0.5",
     author="Kaspar Bunne",
     author_email="kaspar.bunne@fir.rwth-aachen.de",
     description="PrEvelOp - Production Development Optimization",
@@ -15,15 +15,18 @@ setup(
     ],
     python_requires='>=3.7',
     install_requires=[
-        "pandas>=2.2.2",
-        "scikit-learn>=1.3.2",
-        "seaborn>=0.13.2",
-        "matplotlib>=3.8.2",
-        "numpy>=2.0.1",
-        "gower>=0.1.2",
-        "scipy>=1.14.0",
-        "yellowbrick>=1.5",
-        "openpyxl>=3.1.0",
+        "gower==0.1.2",
+        "hdbscan==0.8.40",
+        "matplotlib==3.9.3",
+        "numpy==1.26.4",
+        "pandas==2.2.3",
+        "scikit_learn==1.5.2",
+        "scikit_learn_extra==0.3.0",
+        "scipy==1.14.1",
+        "seaborn==0.13.2",
+        "setuptools==68.1.2",
+        "yellowbrick==1.5",
+        "openpyxl==3.1.5",
     ],
     entry_points={
         "console_scripts": [

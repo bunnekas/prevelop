@@ -1,3 +1,10 @@
-src\PrEvelOp.egg-info\
-src\prevelop\__pycache__\
-*.DS_Store
+# Ignore the virtual environment folder
+prevelop-env/
+
+# Ignore build metadata
+*.egg-info/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
