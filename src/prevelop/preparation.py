@@ -5,6 +5,8 @@
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn'
 from sklearn.preprocessing import OneHotEncoder, MaxAbsScaler
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def load_data(file):
@@ -30,6 +32,95 @@ def load_data(file):
         return data
     else:
         print('File format not supported')
+
+
+def load_simus_data(file, columns_num, columns_cat):
+
+
+    # Read the CSV file with the correct encoding
+    try:
+        # Try reading with UTF-8 first
+        df = pd.read_csv(file, delimiter=';', encoding='utf-8')
+    except UnicodeDecodeError:
+        # If UTF-8 fails, try other common encodings
+        try:
+            df = pd.read_csv(file, delimiter=';', encoding='latin1')
+        except UnicodeDecodeError:
+            df = pd.read_csv(file, delimiter=';', encoding='ISO-8859-1')
+
+    # Drop duplicate rows based on 'OBJECTKEY' and 'NAME', keeping the first occurrence
+    df_unique = df.drop_duplicates(subset=['OBJECTKEY', 'NAME', 'VALUE'], keep=False)
+
+    columns = df_unique['NAME'].unique()
+    # remove columns from columns_num that are not in columns
+    columns_num = [col for col in columns_num if col in columns]
+    # remove columns from columns_cat that are not in columns
+    columns_cat = [col for col in columns_cat if col in columns]
+
+    # select rows with 'NAME' in columns_num
+    df_num = df_unique[df_unique['NAME'].isin(columns_num)]
+    # select rows with 'NAME' in columns_cat
+    df_cat = df_unique[df_unique['NAME'].isin(columns_cat)]
+    # make all values in df_bin categorical
+    df_cat['VALUE'] = df_cat['VALUE'].astype('category')
+
+    ### numerical data
+    # Pivot the table
+    pivot_df_num = df_num.pivot(index='OBJECTKEY', columns='NAME', values='VALUE')
+    # remove the column name
+    pivot_df_num.columns.name = None
+    # Create a column 'Zeichnung' on the left side of the pivot table
+    pivot_df_num.insert(0, 'Zeichnung', pivot_df_num.index)
+    # remove the indices
+    pivot_df_num.reset_index(drop=True, inplace=True)
+    # select specified columns
+    data_num = pivot_df_num[columns_num]
+    # clean data, replace ',' with '.'
+    data_num = data_num.apply(lambda x: x.str.replace(',', '.'))
+    # fill NaN values with 0
+    data_num.fillna(0, inplace=True)
+    # make data type float
+    data_num = data_num.astype(float)
+    # add the column 'Zeichnung' to the dataframe
+    data_num['Zeichnung'] = pivot_df_num['Zeichnung']
+
+
+    ### categorical data
+    # create empty dataframe with column Zeichnung
+    data_cat = pd.DataFrame(columns=['Zeichnung'], data=data_num['Zeichnung'])
+    # iterate over the binary columns and create a new column for each value
+    for col in columns_cat:
+        # create a list of unique values in the column
+        unique_values = df_cat['VALUE'].unique()
+        # remove non meaningful values
+        unique_values = [x for x in unique_values if str(x) != 'nan']
+        if 'Unbekannt' in unique_values:
+            unique_values.remove('Unbekannt')
+        if 'unbekannt' in unique_values:    
+            unique_values.remove('unbekannt')
+        if '0' in unique_values:
+            unique_values.remove('0')
+        if 'invalid' in unique_values:
+            unique_values.remove('invalid')
+        if 'Invalid' in unique_values:
+            unique_values.remove('Invalid')
+        if 'INVALID' in unique_values:
+            unique_values.remove('INVALID')
+        # create a new column for each value with column name 'col' + '_' + 'value'
+        for value in unique_values:
+            value = str(value)
+            data_cat[col + '_' + value] = 0
+            # iterate over the Zeichnung column
+            for index, row in df_cat.iterrows():
+                # if the value in the column is equal to the value in the row, set the value in the new column to 1
+                if row['VALUE'] == value:
+                    data_cat.loc[data_cat['Zeichnung'] == row['OBJECTKEY'], col + '_' + value] = 1
+    columns_cat = data_cat.columns[1:]
+
+    # merge the dataframes
+    cad_data = pd.merge(data_num, data_cat, on='Zeichnung')
+
+    return cad_data, columns_num, columns_cat
 
 
 def clear_cad_data(data):
@@ -190,7 +281,7 @@ def merge_data(cad_data, process_data, link_data, key_merge, key_new):
     return data
 
 
-def preprocessing(data, num_columns, bin_columns, cat_columns):
+def preprocessing(data, num_columns, cat_columns):
     """
     Preprocesses the input data by scaling numerical columns and encoding categorical columns.
 
@@ -207,21 +298,16 @@ def preprocessing(data, num_columns, bin_columns, cat_columns):
     ### preprocess data: scale numerical columns, encode categorical columns
     # split the dataframe in with respect to the selected columns
     df_num = data[num_columns]
-    df_bin = data[bin_columns]
     df_cat = data[cat_columns]
     # scale the numerical columns with MaxAbsScaler
     scaler = MaxAbsScaler().fit(df_num)
     df_num_scaled = pd.DataFrame(data=scaler.transform(df_num), index=df_num.index, columns=df_num.columns)
-    # encode the categorical columns
-    enc = OneHotEncoder(handle_unknown='ignore')
-    enc.fit(df_cat)
-    df_cat_encoded = pd.DataFrame(data=enc.transform(df_cat).toarray(), index=df_cat.index, columns=enc.get_feature_names_out())
     # concatenate the subdataframes columnwise
-    data_preprocessed = pd.concat([df_num_scaled, df_cat_encoded, df_bin], axis=1)
+    data_preprocessed = pd.concat([df_num_scaled, df_cat], axis=1)
     return data_preprocessed
 
 
-def prepare_data(cad_data, process_data, link_data, num_columns, bin_columns, cat_columns, key_cad, key_process):
+def prepare_data(cad_data, process_data, link_data, num_columns, cat_columns, key_cad, key_process):
     """
     Prepares the data by selecting, merging, and preprocessing it.
 
@@ -250,6 +336,9 @@ def prepare_data(cad_data, process_data, link_data, num_columns, bin_columns, ca
     cad_data, process_data, link_data = select_data(cad_data, process_data, link_data, key_cad, key_process)
     # merge the data
     data = merge_data(cad_data, process_data, link_data, key_merge=key_cad, key_new=key_process)
+    #adjust the data types
+    data[num_columns] = data[num_columns].astype(float)
+    data[cat_columns] = data[cat_columns].astype(int)
     # preprocess the data
-    data_preprocessed = preprocessing(data, num_columns, bin_columns, cat_columns)
+    data_preprocessed = preprocessing(data, num_columns, cat_columns)
     return data, data_preprocessed

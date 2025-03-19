@@ -110,7 +110,7 @@ def barplots(data, columns):
     Returns:
     None
     """
-    num_cols = 4  # Number of barplots per row
+    num_cols = 2  # Number of barplots per row
     num_rows = (len(columns) + num_cols - 1) // num_cols  # Calculate rows dynamically
 
     fig, ax = plt.subplots(num_rows, num_cols, figsize=(20, num_rows * 4))
@@ -156,46 +156,6 @@ def heatmap(data, columns, method='pearson', figsize=(10, 8), annot=True, cmap='
     plt.figure(figsize=figsize)
     sns.heatmap(corr_matrix, annot=annot, fmt='.2f', cmap=cmap, cbar=True)
     plt.title(title, fontsize=16)
-    plt.show()
-
-
-def pairplot(data, columns):
-    """
-    Plot a pairplot for the given columns with correlation scores in the upper triangle.
-
-    Parameters:
-    data (pd.DataFrame): The DataFrame containing the data.
-    columns (list of str): The list of column names to be included in the pairplot.
-
-    Returns:
-    None
-    """
-    def corrfunc(x, y, **kwargs):
-        """Annotate correlation score in the top-right plots."""
-        corr = np.corrcoef(x, y)[0, 1]
-        ax = plt.gca()
-        ax.annotate(f"r = {corr:.2f}", 
-                    xy=(0.5, 0.5), 
-                    xycoords='axes fraction', 
-                    ha='center', 
-                    fontsize=10, 
-                    color='red')
-
-    # Create a PairGrid
-    pair_grid = sns.PairGrid(data[columns])
-    
-    # Lower triangle: scatter plot
-    pair_grid.map_lower(sns.scatterplot)
-
-    # Diagonal: KDE plot
-    pair_grid.map_diag(sns.kdeplot)
-
-    # Upper triangle: correlation values
-    pair_grid.map_upper(corrfunc)
-
-    # Add title
-    pair_grid.fig.suptitle("Pairplot with Correlation Scores", y=1.02, fontsize=16)
-    
     plt.show()
 
 
