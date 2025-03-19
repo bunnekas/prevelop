@@ -35,8 +35,6 @@ def load_data(file):
 
 
 def load_simus_data(file, columns_num, columns_cat):
-
-
     # Read the CSV file with the correct encoding
     try:
         # Try reading with UTF-8 first
