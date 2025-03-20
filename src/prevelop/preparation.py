@@ -11,17 +11,19 @@ warnings.filterwarnings("ignore")
 
 def load_data(file):
     """
-    Load data from a CSV or Excel file.
-
-    Parameters:
-    file (str): The path to the file to be loaded. The file should be in CSV or Excel (.xlsx) format.
-
+    Load data from a file and return it as a pandas DataFrame.
+    This function supports loading data from CSV and Excel files. If the file
+    format is not supported, an error message will be printed.
+    Args:
+        file (str): The path to the file to be loaded. The file should have
+                    a '.csv' or '.xlsx' extension.
     Returns:
-    DataFrame: A pandas DataFrame containing the loaded data if the file format is supported.
-
+        pandas.DataFrame: The loaded data as a DataFrame if the file format
+                          is supported.
     Raises:
-    ValueError: If the file format is not supported.
+        ValueError: If the file format is not supported.
     """
+
     ### load data and specify key
     # check if file is csv or excel
     if file.endswith('.csv'):
@@ -35,6 +37,31 @@ def load_data(file):
 
 
 def load_simus_data(file, columns_num, columns_cat):
+    """
+    Load and preprocess simulation data from a CSV file.
+    This function reads a CSV file containing simulation data, processes it to handle
+    numerical and categorical columns, and returns a cleaned and structured DataFrame
+    along with the processed column names.
+    Args:
+        file (str): The file path to the CSV file to be loaded.
+        columns_num (list of str): A list of column names to be treated as numerical data.
+        columns_cat (list of str): A list of column names to be treated as categorical data.
+    Returns:
+        tuple:
+            - cad_data (pd.DataFrame): A DataFrame containing the processed simulation data,
+              with numerical and categorical columns combined.
+            - columns_num (list of str): A list of numerical column names that were successfully
+              processed and included in the output.
+            - columns_cat (list of str): A list of categorical column names that were successfully
+              processed and included in the output.
+    Notes:
+        - The function attempts to read the CSV file using multiple encodings (UTF-8, Latin-1, ISO-8859-1).
+        - Duplicate rows are removed based on the 'OBJECTKEY', 'NAME', and 'VALUE' columns.
+        - Numerical data is pivoted, cleaned, and converted to float type.
+        - Categorical data is expanded into binary columns for each unique value, excluding
+          non-meaningful values such as 'Unbekannt', '0', and 'invalid'.
+        - The resulting DataFrame uses the 'Zeichnung' column as the index.
+    """
     # Read the CSV file with the correct encoding
     try:
         # Try reading with UTF-8 first
@@ -117,6 +144,9 @@ def load_simus_data(file, columns_num, columns_cat):
 
     # merge the dataframes
     cad_data = pd.merge(data_num, data_cat, on='Zeichnung')
+    
+    # set the column 'Zeichnung' as index
+    cad_data.set_index('Zeichnung', inplace=True)
 
     return cad_data, columns_num, columns_cat
 
