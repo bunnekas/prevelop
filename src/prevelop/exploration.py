@@ -99,39 +99,39 @@ def distributions(data, columns):
     plt.show()
 
 
-def barplots(data, columns):
-    """
-    Plot barplots for specified categorical columns in the given DataFrame.
+# def barplots(data, columns):
+#     """
+#     Plot barplots for specified categorical columns in the given DataFrame.
 
-    Parameters:
-    data (pd.DataFrame): The DataFrame containing the data.
-    columns (list of str): A list of column names to plot barplots for.
+#     Parameters:
+#     data (pd.DataFrame): The DataFrame containing the data.
+#     columns (list of str): A list of column names to plot barplots for.
 
-    Returns:
-    None
-    """
-    num_cols = 2  # Number of barplots per row
-    num_rows = (len(columns) + num_cols - 1) // num_cols  # Calculate rows dynamically
+#     Returns:
+#     None
+#     """
+#     num_cols = 2  # Number of barplots per row
+#     num_rows = (len(columns) + num_cols - 1) // num_cols  # Calculate rows dynamically
 
-    fig, ax = plt.subplots(num_rows, num_cols, figsize=(20, num_rows * 4))
-    ax = ax.flatten()  # Flatten axes to ensure consistent 1D indexing
+#     fig, ax = plt.subplots(num_rows, num_cols, figsize=(20, num_rows * 4))
+#     ax = ax.flatten()  # Flatten axes to ensure consistent 1D indexing
 
-    for i, column in enumerate(columns):
-        sns.barplot(
-            x=data[column].value_counts().index,
-            y=data[column].value_counts().values,
-            ax=ax[i]
-        )
-        ax[i].set_title(f'Barplot for {column}')
+#     for i, column in enumerate(columns):
+#         sns.barplot(
+#             x=data[column].value_counts().index,
+#             y=data[column].value_counts().values,
+#             ax=ax[i]
+#         )
+#         ax[i].set_title(f'Barplot for {column}')
 
-    # Hide unused subplots
-    for j in range(len(columns), len(ax)):
-        ax[j].axis('off')
+#     # Hide unused subplots
+#     for j in range(len(columns), len(ax)):
+#         ax[j].axis('off')
 
-    plt.tight_layout()
-    # make xtixk labels vertical
-    plt.xticks(rotation=45)
-    plt.show()
+#     plt.tight_layout()
+#     # make xtixk labels vertical
+#     plt.xticks(rotation=45)
+#     plt.show()
 
 
 def heatmap(data, columns, method='pearson', figsize=(10, 8), annot=True, cmap='coolwarm', title="Correlation Heatmap"):

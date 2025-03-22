@@ -16,6 +16,8 @@ from yellowbrick.cluster import SilhouetteVisualizer
 import math
 import hdbscan
 from sklearn.manifold import TSNE
+from sklearn.metrics import calinski_harabasz_score
+from sklearn.metrics import silhouette_score
 
 
 def gower_distance(data):
@@ -75,28 +77,31 @@ def plot_dendrogram(distance_matrix, **kwargs):
     dendrogram(linkage_matrix, **kwargs)
 
 
-def elbow_plot_agglomerative(data_preprocessed, distance_gower, max_clusters):
+def e(data_preprocessed, distance_gower, min_clusters, max_clusters):
     """
     Plots an elbow plot for agglomerative clustering using the Gower distance.
 
     Parameters:
     data_preprocessed (pd.DataFrame): The preprocessed data used for clustering.
     distance_gower (np.ndarray): The precomputed Gower distance matrix.
+    min_cluster (int): The minimum number of clusters to consider.
     max_clusters (int): The maximum number of clusters to consider.
 
     Returns:
     None
     """
     # Validate input
-    if max_clusters < 2:
-        raise ValueError("max_clusters must be at least 2.")
+    if min_clusters < 2:
+        raise ValueError("min_cluster must be at least 2.")
+    if max_clusters < min_clusters:
+        raise ValueError("max_clusters must be greater than or equal to min_cluster.")
     if distance_gower.shape[0] != len(data_preprocessed):
         raise ValueError("distance_gower size must match the number of data points in data_preprocessed.")
     
     # Initialize list to store cluster variance
     cluster_variance_average = []
 
-    for k in range(2, max_clusters + 1):  # Start with 2 clusters
+    for k in range(min_clusters, max_clusters + 1):  # Start with min_cluster
         clustering = AgglomerativeClustering(n_clusters=k, metric='precomputed', linkage='average', compute_distances=True)
         labels = clustering.fit_predict(distance_gower)
 
@@ -112,117 +117,180 @@ def elbow_plot_agglomerative(data_preprocessed, distance_gower, max_clusters):
         cluster_variance_average.append(cluster_variance)
 
     # Plot the elbow plot
-    plt.figure(figsize=(16,8))
-    plt.plot(range(2, max_clusters + 1), cluster_variance_average, marker='o', linestyle='-')
+    plt.figure(figsize=(16, 8))
+    plt.plot(range(min_clusters, max_clusters + 1), cluster_variance_average, marker='o', linestyle='-')
     plt.xlabel('Number of Clusters')
     plt.ylabel('Sum of Within-Cluster Variance')
-    plt.title('Elbow Method for Optimal Clusters (Linkage: Average)')
+    plt.title(f'Elbow Method for Optimal Clusters (Linkage: Average) [{min_clusters} to {max_clusters}]')
     plt.grid(True)
-    plt.xticks(range(1,max_clusters))
+    if max_clusters - min_clusters <= 50:
+        plt.xticks(range(min_clusters, max_clusters + 1, 1))
+    elif max_clusters - min_clusters > 50 and max_clusters - min_clusters <= 100:
+        plt.xticks(range(min_clusters, max_clusters + 1, 2))
+    elif max_clusters - min_clusters > 100 and max_clusters - min_clusters <= 200:
+        plt.xticks(range(min_clusters, max_clusters + 1, 5))
+    elif max_clusters - min_clusters > 200 and max_clusters - min_clusters <= 500:
+        plt.xticks(range(min_clusters, max_clusters + 1, 10))
+    elif max_clusters - min_clusters > 500 and max_clusters - min_clusters <= 1000:
+        plt.xticks(range(min_clusters, max_clusters + 1, 20))
+
     plt.show()
 
 
-def elbow_plot_kmedoids(data_preprocessed, max_clusters):
+def elbow_plot_kmedoids(data_preprocessed, min_clusters, max_clusters):
     """
-    Plots the Elbow Method for K-Medoids clustering.
+    Plots the Elbow Method for K-Medoids clustering with customizable range and additional metrics.
 
     Parameters:
     data_preprocessed (pd.DataFrame): The preprocessed data to be clustered.
+    min_cluster (int): The minimum number of clusters to consider.
     max_clusters (int): The maximum number of clusters to consider.
 
     Returns:
     None
     """
-    wcss = []
+    # Validate input
+    if min_clusters < 2:
+        raise ValueError("min_cluster must be at least 2.")
+    if max_clusters < min_clusters:
+        raise ValueError("max_clusters must be greater than or equal to min_cluster.")
 
-    for i in range(2, max_clusters):
+    # Initialize lists to store metrics
+    wcss = []  # Within-cluster sum of squares (inertia)
+    silhouette_scores = []  # Silhouette score
+    calinski_harabasz_scores = []  # Calinski-Harabasz index
+
+    for i in range(min_clusters, max_clusters + 1):
         kmedoids = KMedoids(n_clusters=i, random_state=42)
         kmedoids.fit(data_preprocessed)
+        labels = kmedoids.labels_
+
         # Append within-cluster sum of squares (WCSS)
         wcss.append(kmedoids.inertia_)
 
-    # Plot the elbow plot
-    plt.figure(figsize=(16,8))
-    plt.plot(range(2, max_clusters), wcss, marker='o', linestyle='--')
+        # Calculate Silhouette Score
+        if i > 1:  # Silhouette score requires at least 2 clusters
+            silhouette_scores.append(silhouette_score(data_preprocessed, labels))
+        else:
+            silhouette_scores.append(None)
+
+        # Calculate Calinski-Harabasz Index
+        calinski_harabasz_scores.append(calinski_harabasz_score(data_preprocessed, labels))
+
+    # Plot the elbow plot with additional metrics
+    plt.figure(figsize=(16, 8))
+
+    # Plot WCSS (Inertia)
+    plt.plot(range(min_clusters, max_clusters + 1), wcss, marker='o', linestyle='--', label='WCSS (Inertia)')
     plt.xlabel('Number of Clusters')
     plt.ylabel('WCSS (Inertia)')
-    plt.title('Elbow Method for Optimal Clusters (K-Medoids)')
-    plt.xticks(range(2, max_clusters))
+    plt.title(f'Elbow Method for Optimal Clusters (K-Medoids) [{min_clusters} to {max_clusters}]')
+    if max_clusters - min_clusters <= 50:
+        plt.xticks(range(min_clusters, max_clusters + 1, 1))
+    elif max_clusters - min_clusters > 50 and max_clusters - min_clusters <= 100:
+        plt.xticks(range(min_clusters, max_clusters + 1, 2))
+    elif max_clusters - min_clusters > 100 and max_clusters - min_clusters <= 200:
+        plt.xticks(range(min_clusters, max_clusters + 1, 5))
+    elif max_clusters - min_clusters > 200 and max_clusters - min_clusters <= 500:
+        plt.xticks(range(min_clusters, max_clusters + 1, 10))
+    elif max_clusters - min_clusters > 500 and max_clusters - min_clusters <= 1000:
+        plt.xticks(range(min_clusters, max_clusters + 1, 20))
     plt.grid(True)
-    plt.xticks(range(1,max_clusters))
+    plt.legend()
+
     plt.show()
 
 
-def silhouette_score_kmedoids(data_preprocessed, max_clusters):
+def silhouette_score_kmedoids(data_preprocessed, min_clusters, max_clusters):
     """
-    Plots the Silhouette Scores for K-Medoids clustering.
+    Plots Silhouette Scores and Calinski-Harabasz Scores for K-Medoids clustering with a logarithmic y-axis.
 
     Parameters:
     data_preprocessed (pd.DataFrame): The preprocessed data to be clustered.
+    min_cluster (int): The minimum number of clusters to consider.
     max_clusters (int): The maximum number of clusters to consider.
 
     Returns:
     None
     """
-    silhouette_avg = []
+    # Validate input
+    if min_clusters < 2:
+        raise ValueError("min_cluster must be at least 2.")
+    if max_clusters < min_clusters:
+        raise ValueError("max_clusters must be greater than or equal to min_cluster.")
 
-    for i in range(2, max_clusters):
+    # Initialize lists to store metrics
+    silhouette_avg = []  # Silhouette scores
+
+    for i in range(min_clusters, max_clusters + 1):
         kmedoids = KMedoids(n_clusters=i, random_state=42)
         labels = kmedoids.fit_predict(data_preprocessed)
-        # Append the silhouette score
+
+        # Append Silhouette Score
         silhouette_avg.append(silhouette_score(data_preprocessed, labels))
 
-    # Plot the silhouette scores
-    plt.figure(figsize=(16,8))
-    plt.plot(range(2, max_clusters), silhouette_avg, marker='o', linestyle='--')
+    # Plot the scores
+    plt.figure(figsize=(16, 8))
+    plt.plot(range(min_clusters, max_clusters + 1), silhouette_avg, marker='o', linestyle='--', label='Silhouette Score')
+    
+    # Set logarithmic y-axis
     plt.xlabel('Number of Clusters')
-    plt.ylabel('Silhouette Score')
-    plt.title('Silhouette Analysis for Optimal Clusters (K-Medoids)')
-    plt.xticks(range(2, max_clusters))
-    plt.grid(True)
-    plt.xticks(range(1,max_clusters))
+    plt.ylabel('Score')
+    plt.title(f'SilhouetteAnalysis for Optimal Clusters (K-Medoids) [{min_clusters} to {max_clusters}]')
+    if max_clusters - min_clusters <= 50:
+        plt.xticks(range(min_clusters, max_clusters + 1, 1))
+    elif max_clusters - min_clusters > 50 and max_clusters - min_clusters <= 100:
+        plt.xticks(range(min_clusters, max_clusters + 1, 2))
+    elif max_clusters - min_clusters > 100 and max_clusters - min_clusters <= 200:
+        plt.xticks(range(min_clusters, max_clusters + 1, 5))
+    elif max_clusters - min_clusters > 200 and max_clusters - min_clusters <= 500:
+        plt.xticks(range(min_clusters, max_clusters + 1, 10))
+    elif max_clusters - min_clusters > 500 and max_clusters - min_clusters <= 1000:
+        plt.xticks(range(min_clusters, max_clusters + 1, 20))
+    plt.grid(True, which="both", ls="--")
+    plt.legend()
     plt.show()
 
 
-def silhouette_plot_kmedoids(data_preprocessed, cluster_sizes):
-    """
-    Generates silhouette plots for different cluster sizes using KMeans clustering.
+# def silhouette_plot_kmedoids(data_preprocessed, cluster_sizes):
+#     """
+#     Generates silhouette plots for different cluster sizes using KMeans clustering.
 
-    Parameters:
-    data_preprocessed (array-like or DataFrame): The preprocessed data to be clustered.
-    cluster_sizes (list of int): A list of integers representing the different numbers of clusters to evaluate.
+#     Parameters:
+#     data_preprocessed (array-like or DataFrame): The preprocessed data to be clustered.
+#     cluster_sizes (list of int): A list of integers representing the different numbers of clusters to evaluate.
 
-    Returns:
-    None: This function creates plots with silhouette scores for the specified cluster sizes.
-    """
-    # Calculate the number of rows and columns for subplots
-    num_clusters = len(cluster_sizes)
-    cols = 2  # Number of plots per row
-    rows = math.ceil(num_clusters / cols)
+#     Returns:
+#     None: This function creates plots with silhouette scores for the specified cluster sizes.
+#     """
+#     # Calculate the number of rows and columns for subplots
+#     num_clusters = len(cluster_sizes)
+#     cols = 2  # Number of plots per row
+#     rows = math.ceil(num_clusters / cols)
 
-    # Create subplots dynamically
-    fig, axes = plt.subplots(rows, cols, figsize=(cols * 6, rows * 5))
-    axes = axes.flatten()  # Flatten axes array for easy iteration
+#     # Create subplots dynamically
+#     fig, axes = plt.subplots(rows, cols, figsize=(cols * 6, rows * 5))
+#     axes = axes.flatten()  # Flatten axes array for easy iteration
 
-    for idx, n_clusters in enumerate(cluster_sizes):
-        # Create KMeans instance
-        km = KMeans(n_clusters=n_clusters, init='k-means++', n_init=10, max_iter=100, random_state=42)
+#     for idx, n_clusters in enumerate(cluster_sizes):
+#         # Create KMeans instance
+#         km = KMeans(n_clusters=n_clusters, init='k-means++', n_init=10, max_iter=100, random_state=42)
         
-        # Create SilhouetteVisualizer instance
-        visualizer = SilhouetteVisualizer(km, ax=axes[idx], colors='yellowbrick')
+#         # Create SilhouetteVisualizer instance
+#         visualizer = SilhouetteVisualizer(km, ax=axes[idx], colors='yellowbrick')
         
-        # Fit the visualizer to data
-        visualizer.fit(data_preprocessed)
+#         # Fit the visualizer to data
+#         visualizer.fit(data_preprocessed)
         
-        # Set the subplot title
-        axes[idx].set_title(f'Silhouette Plot: {n_clusters} Clusters')
+#         # Set the subplot title
+#         axes[idx].set_title(f'Silhouette Plot: {n_clusters} Clusters')
 
-    # Hide any unused subplots
-    for i in range(len(cluster_sizes), len(axes)):
-        axes[i].axis('off')
+#     # Hide any unused subplots
+#     for i in range(len(cluster_sizes), len(axes)):
+#         axes[i].axis('off')
 
-    plt.tight_layout()
-    plt.show()
+#     plt.tight_layout()
+#     plt.show()
 
 
 def agglomerative_clustering(distance_matrix, nr_cluster):
@@ -264,43 +332,43 @@ def kmedoids_clustering(distance_matrix, nr_cluster):
     return clustering.labels_
     
 
-def first_clusters(data, distance_matrix, nr_clusters):
-    """
-    Show the first k clusters with the smallest distance using agglomerative clustering.
+# def first_clusters(data, distance_matrix, nr_clusters):
+#     """
+#     Show the first k clusters with the smallest distance using agglomerative clustering.
 
-    Parameters:
-    data (pd.DataFrame): The input data containing the samples.
-    distance_matrix (np.ndarray): The precomputed distance matrix.
-    nr_clusters (int): The number of clusters to find.
+#     Parameters:
+#     data (pd.DataFrame): The input data containing the samples.
+#     distance_matrix (np.ndarray): The precomputed distance matrix.
+#     nr_clusters (int): The number of clusters to find.
 
-    Returns:
-    None: This function prints the clusters and their indices in the data.
+#     Returns:
+#     None: This function prints the clusters and their indices in the data.
 
-    The function performs the following steps:
-    1. Sorts the distance matrix and removes zero distances.
-    2. Iteratively performs agglomerative clustering with increasing distance thresholds.
-    3. Adds clusters with size greater than 1 to the cluster list.
-    4. Prints the clusters and their corresponding indices in the data.
-    """
-    # show the first k clusters with the smallest distance
-    cluster = []
-    sort = np.sort(distance_matrix, axis=None)
-    sort = sort[sort != 0]
-    min_distance = sort[0]
-    t = sort[1]-sort[0]
-    while len(cluster) <= nr_clusters:
-        # show the first clusters to be build by agglomerative clustering
-        clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=min_distance, metric='precomputed', linkage='average', compute_distances=True).fit(distance_matrix)
-        # add cluster with size > 1 to cluster list
-        for i in range(len(Counter(clustering.labels_))):
-            if Counter(clustering.labels_)[i] > 1 and i not in cluster:
-                cluster.append(i)
-        min_distance += t
-    # print the cluster and their index in the data
-    for i in cluster:
-        print('Cluster:', i)
-        print(data[clustering.labels_ == i].index.tolist())
-        print('------------------------')
+#     The function performs the following steps:
+#     1. Sorts the distance matrix and removes zero distances.
+#     2. Iteratively performs agglomerative clustering with increasing distance thresholds.
+#     3. Adds clusters with size greater than 1 to the cluster list.
+#     4. Prints the clusters and their corresponding indices in the data.
+#     """
+#     # show the first k clusters with the smallest distance
+#     cluster = []
+#     sort = np.sort(distance_matrix, axis=None)
+#     sort = sort[sort != 0]
+#     min_distance = sort[0]
+#     t = sort[1]-sort[0]
+#     while len(cluster) <= nr_clusters:
+#         # show the first clusters to be build by agglomerative clustering
+#         clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=min_distance, metric='precomputed', linkage='average', compute_distances=True).fit(distance_matrix)
+#         # add cluster with size > 1 to cluster list
+#         for i in range(len(Counter(clustering.labels_))):
+#             if Counter(clustering.labels_)[i] > 1 and i not in cluster:
+#                 cluster.append(i)
+#         min_distance += t
+#     # print the cluster and their index in the data
+#     for i in cluster:
+#         print('Cluster:', i)
+#         print(data[clustering.labels_ == i].index.tolist())
+#         print('------------------------')
 
 
 def hdbscan_clustering(distance_matrix, min_cluster_size=5, min_samples=None):

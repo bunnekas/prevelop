@@ -14,24 +14,43 @@ from sklearn.manifold import TSNE
 
 def feature_importance(data, labels):
     """
-    Analyze feature importance using a Random Forest classifier.
+    Analyze feature importance using a Random Forest classifier, aggregating one-hot encoded features.
 
     Parameters:
-    data (array-like): The dataset used for clustering.
+    data (pd.DataFrame): The dataset used for clustering.
     labels (array-like): Cluster labels assigned to each point.
-    feature_names (list of str): Names of the features in the dataset.
 
     Returns:
     None: Displays a bar plot of feature importances.
     """
+    # Train the Random Forest model
     model = RandomForestClassifier(random_state=42)
     model.fit(data, labels)
     importances = model.feature_importances_
 
-    # Plot feature importances
+    # Extract base feature names from one-hot encoded feature names
+    base_features = {}
+    for feature in data.columns:
+        base_feature = feature.split('_')[0]  # Assuming the format is 'feature_a', 'feature_b', etc.
+        if base_feature not in base_features:
+            base_features[base_feature] = []
+        base_features[base_feature].append(feature)
+
+    # Aggregate importance scores for each base feature
+    aggregated_importances = {}
+    for base_feature, encoded_features in base_features.items():
+        aggregated_importances[base_feature] = sum(importances[data.columns.get_loc(f)] for f in encoded_features)
+
+    # Convert aggregated importances to a DataFrame for easier plotting
+    aggregated_importances_df = pd.DataFrame(list(aggregated_importances.items()), columns=['Feature', 'Importance'])
+
+    # Sort the DataFrame by importance for better visualization
+    aggregated_importances_df = aggregated_importances_df.sort_values(by='Importance', ascending=False)
+
+    # Plot aggregated feature importances
     plt.figure(figsize=(16, 20))
-    plt.barh(data.columns, importances, color="skyblue")
-    plt.title("Feature Importance for Clustering")
+    plt.barh(aggregated_importances_df['Feature'], aggregated_importances_df['Importance'], color="skyblue")
+    plt.title("Aggregated Feature Importance for Clustering")
     plt.xlabel("Importance Score")
     plt.ylabel("Features")
     plt.show()

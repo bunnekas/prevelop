@@ -1,10 +1,5 @@
-# Ignore the virtual environment folder
-prevelop-env/
-
-# Ignore build metadata
+.DS_Store
 *.egg-info/
-
-# Ignore Python bytecode files
 __pycache__/
 *.pyc
 *.pyo

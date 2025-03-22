@@ -36,7 +36,7 @@ def load_data(file):
         print('File format not supported')
 
 
-def load_simus_data(file, columns_num, columns_cat):
+def load_simus_data(file):
     """
     Load and preprocess simulation data from a CSV file.
     This function reads a CSV file containing simulation data, processes it to handle
@@ -44,8 +44,6 @@ def load_simus_data(file, columns_num, columns_cat):
     along with the processed column names.
     Args:
         file (str): The file path to the CSV file to be loaded.
-        columns_num (list of str): A list of column names to be treated as numerical data.
-        columns_cat (list of str): A list of column names to be treated as categorical data.
     Returns:
         tuple:
             - cad_data (pd.DataFrame): A DataFrame containing the processed simulation data,
@@ -62,6 +60,13 @@ def load_simus_data(file, columns_num, columns_cat):
           non-meaningful values such as 'Unbekannt', '0', and 'invalid'.
         - The resulting DataFrame uses the 'Zeichnung' column as the index.
     """
+    # Specify the numerical and categorical columns
+    num_columns = ['Volumen','L','B','H','Da max.','Di min.','Lrot','Gesamtanzahl Bohrungen','Anzahl Außenabsätze', 
+               'Gesamtanzahl Eindrehungen außen','Gesamtanzahl Eindrehungen innen','Fasenbreite rechts', 
+               'Endenwinkel rechts','Anzahl Innenabsätze']
+    cat_columns = ['Klasse','Eindrehungsart außen','Eindrehungsanordnung außen','Absatzform','Bohrungsanordnung',
+               'Anbringung Bohrungsanordnung','Bohrungsart','Ende rechts','Innenform']
+    
     # Read the CSV file with the correct encoding
     try:
         # Try reading with UTF-8 first
@@ -78,9 +83,9 @@ def load_simus_data(file, columns_num, columns_cat):
 
     columns = df_unique['NAME'].unique()
     # remove columns from columns_num that are not in columns
-    columns_num = [col for col in columns_num if col in columns]
+    columns_num = [col for col in num_columns if col in columns]
     # remove columns from columns_cat that are not in columns
-    columns_cat = [col for col in columns_cat if col in columns]
+    columns_cat = [col for col in cat_columns if col in columns]
 
     # select rows with 'NAME' in columns_num
     df_num = df_unique[df_unique['NAME'].isin(columns_num)]
@@ -108,7 +113,6 @@ def load_simus_data(file, columns_num, columns_cat):
     data_num = data_num.astype(float)
     # add the column 'Zeichnung' to the dataframe
     data_num['Zeichnung'] = pivot_df_num['Zeichnung']
-
 
     ### categorical data
     # create empty dataframe with column Zeichnung
@@ -151,51 +155,51 @@ def load_simus_data(file, columns_num, columns_cat):
     return cad_data, columns_num, columns_cat
 
 
-def clear_cad_data(data):
-    """
-    Cleans and preprocesses CAD data by performing the following operations:
+# def clear_cad_data(data):
+#     """
+#     Cleans and preprocesses CAD data by performing the following operations:
     
-    1. Drops duplicate rows.
-    2. Drops rows with missing values in specific columns.
-    3. Renames columns:
-       - Renames 'Benennung (CAD)' to 'Zeichnung'.
-       - Renames 'Key' to 'Zeichnung' if 'Benennung (CAD)' is not present.
-    4. Deletes specific substrings ('mm3', 'kg', 'mm2', 'mm', ' ') from certain columns and converts them to float.
-    5. Drops rows with missing values in 'L [mm]', 'B [mm]', or 'H [mm]'.
+#     1. Drops duplicate rows.
+#     2. Drops rows with missing values in specific columns.
+#     3. Renames columns:
+#        - Renames 'Benennung (CAD)' to 'Zeichnung'.
+#        - Renames 'Key' to 'Zeichnung' if 'Benennung (CAD)' is not present.
+#     4. Deletes specific substrings ('mm3', 'kg', 'mm2', 'mm', ' ') from certain columns and converts them to float.
+#     5. Drops rows with missing values in 'L [mm]', 'B [mm]', or 'H [mm]'.
     
-    Parameters:
-    data (pandas.DataFrame): The input CAD data to be cleaned.
+#     Parameters:
+#     data (pandas.DataFrame): The input CAD data to be cleaned.
     
-    Returns:
-    pandas.DataFrame: The cleaned and preprocessed CAD data.
-    """
-    columns = data.columns
-    # set key
-    if 'Benennung (CAD)' in columns:
-        data = data.rename(columns={"Benennung (CAD)": "Zeichnung"})
-        data = data.dropna(subset=["Zeichnung"])
-    elif 'Key' in data.columns:
-        data = data.rename(columns={"Key": "Zeichnung"})
-        data = data.dropna(subset=["Zeichnung"])
-    else:
-        raise ValueError("No key found.")
-    # remove units
-    columns_clean = ['Volumen [mm3]','Masse [kg]','Flächeninhalt [mm2]','L [mm]','B [mm]', 'H [mm]','Lrot [mm]','Da max. [mm]','Di min. [mm]']
-    for col in columns_clean:
-        if col in data.columns:
-            # delete substings mm3, kg, mm2, mm from columns Volumen, Masse, Flächeninhalt, L, B, H, Lrot, Da max., Di min.
-            data[col] = data[col].str.replace('mm3', '')
-            data[col] = data[col].str.replace('kg', '')
-            data[col] = data[col].str.replace('mm2', '')
-            data[col] = data[col].str.replace('mm', '')
-            data[col] = data[col].str.replace(' ', '')
-            data[col] = data[col].str.replace(',', '.')
-            data[col] = data[col].astype(float)
-    # drop rows with missing values in columns L [mm], B [mm] or H [mm]
-    data.dropna(subset=['L [mm]', 'B [mm]', 'H [mm]'], inplace=True)
-    # fill missing values with 0
-    data.fillna(0, inplace=True)
-    return data 
+#     Returns:
+#     pandas.DataFrame: The cleaned and preprocessed CAD data.
+#     """
+#     columns = data.columns
+#     # set key
+#     if 'Benennung (CAD)' in columns:
+#         data = data.rename(columns={"Benennung (CAD)": "Zeichnung"})
+#         data = data.dropna(subset=["Zeichnung"])
+#     elif 'Key' in data.columns:
+#         data = data.rename(columns={"Key": "Zeichnung"})
+#         data = data.dropna(subset=["Zeichnung"])
+#     else:
+#         raise ValueError("No key found.")
+#     # remove units
+#     columns_clean = ['Volumen [mm3]','Masse [kg]','Flächeninhalt [mm2]','L [mm]','B [mm]', 'H [mm]','Lrot [mm]','Da max. [mm]','Di min. [mm]']
+#     for col in columns_clean:
+#         if col in data.columns:
+#             # delete substings mm3, kg, mm2, mm from columns Volumen, Masse, Flächeninhalt, L, B, H, Lrot, Da max., Di min.
+#             data[col] = data[col].str.replace('mm3', '')
+#             data[col] = data[col].str.replace('kg', '')
+#             data[col] = data[col].str.replace('mm2', '')
+#             data[col] = data[col].str.replace('mm', '')
+#             data[col] = data[col].str.replace(' ', '')
+#             data[col] = data[col].str.replace(',', '.')
+#             data[col] = data[col].astype(float)
+#     # drop rows with missing values in columns L [mm], B [mm] or H [mm]
+#     data.dropna(subset=['L [mm]', 'B [mm]', 'H [mm]'], inplace=True)
+#     # fill missing values with 0
+#     data.fillna(0, inplace=True)
+#     return data 
 
 
 def aggregate_data(data, key, columns, methods):
@@ -240,6 +244,8 @@ def aggregate_data(data, key, columns, methods):
             data_new[column] = data.groupby(key)[column].min().tolist()
         else:
             raise ValueError('Method not supported')
+    # set key as index
+    data_new.set_index(key, inplace=True)
     return data_new
 
 
@@ -260,14 +266,14 @@ def select_data(cad_data, process_data, link_data, key_cad, key_process):
             - cad_data (pd.DataFrame): Filtered CAD data.
             - process_data (pd.DataFrame): Filtered process data.
             - link_data (pd.DataFrame): Filtered linking data with duplicates removed.
-    """
+    """ 
     ### select rows for which cad-data and process-data is available
-    # select rows from cad_data with key_cad in column key_cad in link_data
-    cad_data = cad_data[cad_data[key_cad].isin(link_data[key_cad])]
-    zeichnungen = cad_data[key_cad].tolist()
+    # select rows from cad_data with indices in column key_cad in link_data
+    cad_data = cad_data[cad_data.index.isin(link_data[key_cad])]
+    zeichnungen = cad_data.index.tolist()
     # select rows from process_data with process_data in column process_data in link_data
-    process_data = process_data[process_data[key_process].isin(link_data[key_process])]
-    teile = process_data[key_process].tolist()
+    process_data = process_data[process_data.index.isin(link_data[key_process])]
+    teile = process_data.index.tolist()
     # select rows from link_data with key_cad in zeichnungen list 
     link_data = link_data[link_data[key_cad].isin(zeichnungen)]
     # select rows from data with key_process in teile list
@@ -276,8 +282,8 @@ def select_data(cad_data, process_data, link_data, key_cad, key_process):
     link_data = link_data.drop_duplicates()
     zeichnungen = link_data[key_cad].tolist()
     teile = link_data[key_process].tolist()
-    cad_data = cad_data[cad_data[key_cad].isin(zeichnungen)]
-    process_data = process_data[process_data[key_process].isin(teile)]
+    cad_data = cad_data[cad_data.index.isin(zeichnungen)]
+    process_data = process_data[process_data.index.isin(teile)]
     return cad_data, process_data, link_data
 
 
@@ -298,6 +304,14 @@ def merge_data(cad_data, process_data, link_data, key_merge, key_new):
     Returns:
     pd.DataFrame: The merged dataframe with `key_new` as the index.
     """
+    # index of cad_data is key_merge
+    cad_data[key_merge] = cad_data.index
+    # remove index 
+    cad_data.reset_index(drop=True, inplace=True)
+    # index of process_data is key_new
+    process_data[key_new] = process_data.index
+    # remove index
+    process_data.reset_index(drop=True, inplace=True)
     # append process data with column key_merge from link_data
     process_data = process_data.join(link_data.set_index(key_new), on=key_new)
     # natural join data with cad_data on column key
@@ -323,6 +337,8 @@ def preprocessing(data, num_columns, cat_columns):
     pd.DataFrame: A dataframe with preprocessed data where numerical columns are scaled,
                   categorical columns are one-hot encoded, and binary columns are unchanged.
     """
+    num_columns = [col for col in num_columns if col in data.columns]
+    cat_columns = [col for col in cat_columns if col in data.columns]
     ### preprocess data: scale numerical columns, encode categorical columns
     # split the dataframe in with respect to the selected columns
     df_num = data[num_columns]
@@ -335,7 +351,7 @@ def preprocessing(data, num_columns, cat_columns):
     return data_preprocessed
 
 
-def prepare_data(cad_data, process_data, link_data, num_columns, cat_columns, key_cad, key_process):
+def prepare_data(cad_data, num_columns, cat_columns, process_data=None, link_data=None):
     """
     Prepares the data by selecting, merging, and preprocessing it.
 
@@ -359,14 +375,25 @@ def prepare_data(cad_data, process_data, link_data, num_columns, cat_columns, ke
             - data (pd.DataFrame): The merged data.
             - data_preprocessed (pd.DataFrame): The preprocessed data.
     """
-    ### calls select_data, merge_data and preprocessing functions
-    # select the data
-    cad_data, process_data, link_data = select_data(cad_data, process_data, link_data, key_cad, key_process)
-    # merge the data
-    data = merge_data(cad_data, process_data, link_data, key_merge=key_cad, key_new=key_process)
-    #adjust the data types
-    data[num_columns] = data[num_columns].astype(float)
-    data[cat_columns] = data[cat_columns].astype(int)
-    # preprocess the data
-    data_preprocessed = preprocessing(data, num_columns, cat_columns)
-    return data, data_preprocessed
+    if process_data is None:
+        data = cad_data
+        data_preprocessed = preprocessing(data, num_columns, cat_columns)  
+        return data, data_preprocessed
+    elif link_data is None:
+        print('No link data provided')
+        data = cad_data
+        data_preprocessed = preprocessing(data, num_columns, cat_columns)  
+        return data, data_preprocessed
+    else:
+        # key_cad is index of cad_data
+        key_cad = cad_data.index.name
+        # key_process is index of process_data
+        key_process = process_data.index.name
+        # select the data
+        cad_data, process_data, link_data = select_data(cad_data, process_data, link_data, key_cad, key_process)
+        # merge the data
+        data = merge_data(cad_data, process_data, link_data, key_merge=key_cad, key_new=key_process)
+        data[num_columns] = data[num_columns].astype(float)
+        data[cat_columns] = data[cat_columns].astype(int)
+        data_preprocessed = preprocessing(data, num_columns, cat_columns)
+        return data, data_preprocessed
