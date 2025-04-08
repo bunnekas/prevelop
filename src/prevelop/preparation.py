@@ -144,7 +144,7 @@ def load_simus_data(file):
                 # if the value in the column is equal to the value in the row, set the value in the new column to 1
                 if row['VALUE'] == value:
                     data_cat.loc[data_cat['Zeichnung'] == row['OBJECTKEY'], col + '_' + value] = 1
-    columns_cat = data_cat.columns[1:]
+    columns_cat = list(data_cat.columns[1:])
 
     # merge the dataframes
     cad_data = pd.merge(data_num, data_cat, on='Zeichnung')
@@ -221,6 +221,8 @@ def aggregate_data(data, key, columns, methods):
     # funtion to aggregate process data
     teile_list = list(set(data[key].tolist()))
     data_new = pd.DataFrame(data=teile_list, columns=[key])
+    cat_columns = []
+    num_columns = []
     for column, method in zip(columns, methods):
         column_list = []
         if method == 'encode':
@@ -233,20 +235,25 @@ def aggregate_data(data, key, columns, methods):
             for value in values:
                 column_values = [1 if value in process else 0 for process in data_new[column]]
                 data_new[str(column) + ' ' + str(value)] = column_values
+                cat_columns.append(str(column) + ' ' + str(value))
             data_new.drop(columns=[column], inplace=True)
         elif method == 'sum':
             data_new[column] = data.groupby(key)[column].sum().tolist()
+            num_columns.append(column)
         elif method == 'mean':
             data_new[column] = data.groupby(key)[column].mean().tolist()
+            num_columns.append(column)
         elif method == 'max':
             data_new[column] = data.groupby(key)[column].max().tolist()
+            num_columns.append(column)
         elif method == 'min':
             data_new[column] = data.groupby(key)[column].min().tolist()
+            num_columns.append(column)
         else:
             raise ValueError('Method not supported')
     # set key as index
     data_new.set_index(key, inplace=True)
-    return data_new
+    return data_new, num_columns, cat_columns
 
 
 def select_data(cad_data, process_data, link_data, key_cad, key_process):
@@ -394,6 +401,6 @@ def prepare_data(cad_data, num_columns, cat_columns, process_data=None, link_dat
         # merge the data
         data = merge_data(cad_data, process_data, link_data, key_merge=key_cad, key_new=key_process)
         data[num_columns] = data[num_columns].astype(float)
-        data[cat_columns] = data[cat_columns].astype(int)
+        # data[cat_columns] = data[cat_columns].astype(int)
         data_preprocessed = preprocessing(data, num_columns, cat_columns)
         return data, data_preprocessed
