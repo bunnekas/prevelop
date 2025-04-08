@@ -77,7 +77,7 @@ def plot_dendrogram(distance_matrix, **kwargs):
     dendrogram(linkage_matrix, **kwargs)
 
 
-def e(data_preprocessed, distance_gower, min_clusters, max_clusters):
+def elbow_plot_agglomerative(data_preprocessed, distance_gower, min_clusters, max_clusters):
     """
     Plots an elbow plot for agglomerative clustering using the Gower distance.
 
