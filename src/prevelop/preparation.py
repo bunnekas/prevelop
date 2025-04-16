@@ -231,7 +231,7 @@ def aggregate_data(data, key, columns, methods):
                 column_list.append(teil_data[column].tolist())
             data_new[column] = column_list
             # select all values in column unique
-            values = list(set([item for sublist in column_list for item in sublist]))
+            values = list(set([item for sublist in column_list for item in sublist if str(item) != 'nan']))
             for value in values:
                 column_values = [1 if value in process else 0 for process in data_new[column]]
                 data_new[str(column) + ' ' + str(value)] = column_values
