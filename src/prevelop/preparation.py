@@ -353,8 +353,12 @@ def preprocessing(data, num_columns, cat_columns):
     # scale the numerical columns with MaxAbsScaler
     scaler = MaxAbsScaler().fit(df_num)
     df_num_scaled = pd.DataFrame(data=scaler.transform(df_num), index=df_num.index, columns=df_num.columns)
+    # encode the categorical columns with OneHotEncoder
+    encoder = OneHotEncoder().fit(df_cat)
+    df_cat_encoded = pd.DataFrame(data=encoder.transform(df_cat), index=df_cat.index, columns=encoder.get_feature_names_out(cat_columns))
+    # remove the column name
     # concatenate the subdataframes columnwise
-    data_preprocessed = pd.concat([df_num_scaled, df_cat], axis=1)
+    data_preprocessed = pd.concat([df_num_scaled, df_cat_encoded], axis=1)
     return data_preprocessed
 
 
@@ -403,4 +407,19 @@ def prepare_data(cad_data, num_columns, cat_columns, process_data=None, link_dat
         data[num_columns] = data[num_columns].astype(float)
         # data[cat_columns] = data[cat_columns].astype(int)
         data_preprocessed = preprocessing(data, num_columns, cat_columns)
+        # remove columns in data and data_preprocessed containing the substring 'nan'
+        data = data.loc[:, ~data.columns.str.contains('nan')]
+        data_preprocessed = data_preprocessed.loc[:, ~data_preprocessed.columns.str.contains('nan')]
+        # remove columns in data and data_preprocessed containing the substring 'Unnamed'
+        data = data.loc[:, ~data.columns.str.contains('Unnamed')]
+        data_preprocessed = data_preprocessed.loc[:, ~data_preprocessed.columns.str.contains('Unnamed')]
+        # drop columns in data and data_preprocessed where more than 95% of the values are 0
+        data = data.loc[:, (data != 0).mean() > 0.05]
+        data_preprocessed = data_preprocessed.loc[:, (data_preprocessed != 0).mean() > 0.05]
+        # drop columns in data and data_preprocessed where more than 95% of the values are 1
+        data = data.loc[:, (data != 1).mean() > 0.05]
+        data_preprocessed = data_preprocessed.loc[:, (data_preprocessed != 1).mean() > 0.05]
+        # remove rows in data and data_preprocessed containing nan values
+        data = data.dropna()
+        data_preprocessed = data_preprocessed.dropna()
         return data, data_preprocessed

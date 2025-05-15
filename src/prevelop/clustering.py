@@ -134,6 +134,9 @@ def elbow_plot_agglomerative(data_preprocessed, distance_gower, min_clusters, ma
     elif max_clusters - min_clusters > 500 and max_clusters - min_clusters <= 1000:
         plt.xticks(range(min_clusters, max_clusters + 1, 20))
 
+    # make x-axis labels readable
+    plt.xticks(rotation=45)
+    plt.title(f'Elbow Method for Optimal Clusters (Linkage: Average) [{min_clusters} to {max_clusters}]')
     plt.show()
 
 
