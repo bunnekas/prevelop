@@ -3,3 +3,28 @@
 __pycache__/
 *.pyc
 *.pyo
+
+# virtual environment
+prevelop-env/
+venv/
+.venv/
+
+# data files
+data/
+*.csv
+*.xlsx
+*.xls
+
+# jupyter
+.ipynb_checkpoints/
+
+# streamlit
+.streamlit/
+
+# IDE
+.vscode/
+.idea/
+
+# distribution
+dist/
+build/
