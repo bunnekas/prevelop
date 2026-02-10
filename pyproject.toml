@@ -17,7 +17,7 @@ dependencies = [
     "gower>=0.1.2",
     "hdbscan>=0.8.40",
     "matplotlib>=3.9",
-    "numpy>=1.26",
+    "numpy>=1.26,<2",
     "pandas>=2.2",
     "scikit-learn>=1.5",
     "scikit-learn-extra>=0.3",
@@ -34,7 +34,7 @@ dashboard = [
 
 [build-system]
 requires = ["hatchling"]
-build-backend = "hatchling.backends"
+build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/prevelop"]
