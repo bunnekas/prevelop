@@ -25,34 +25,24 @@ git clone <repository-url>
 cd prevelop
 ```
 
-### Schritt 2: Virtuelle Umgebung einrichten
+### Schritt 2: Abhängigkeiten installieren
+
+Mit [uv](https://docs.astral.sh/uv/):
 
 ```bash
-python3 -m venv prevelop-env
-
-# Auf Linux/MacOS:
-source prevelop-env/bin/activate
-
-# Auf Windows:
-prevelop-env\Scripts\activate
+uv sync
 ```
 
-### Schritt 3: Abhängigkeiten installieren
+Für das Dashboard zusätzlich:
 
 ```bash
-pip install -r requirements.txt
+uv sync --extra dashboard
 ```
 
-### Schritt 4: PrEvelOp im Entwicklungsmodus installieren
+### Schritt 3: Installation überprüfen
 
 ```bash
-pip install -e src/
-```
-
-### Schritt 5: Installation überprüfen
-
-```bash
-python -c "import prevelop; print(prevelop.__version__)"
+uv run python -c "import prevelop; print(prevelop.__version__)"
 ```
 
 ---
@@ -62,7 +52,7 @@ python -c "import prevelop; print(prevelop.__version__)"
 ### Dashboard starten
 
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 Das Dashboard bietet vier Seiten:
@@ -105,12 +95,11 @@ scores = evaluate_clustering(data_preprocessed.values, labels)
 ```
 prevelop/
 ├── app.py                      # Streamlit Dashboard
-├── requirements.txt            # Abhängigkeiten
+├── pyproject.toml              # Projektdefinition und Abhängigkeiten
 ├── README.md
 ├── notebooks/
 │   └── exploration.ipynb       # Anwendungsbeispiel
 └── src/
-    ├── setup.py
     └── prevelop/
         ├── __init__.py
         ├── data.py             # Synthetische Daten

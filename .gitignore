@@ -9,6 +9,9 @@ prevelop-env/
 venv/
 .venv/
 
+# uv
+uv.lock
+
 # data files
 data/
 *.csv

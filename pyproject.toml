@@ -1,0 +1,40 @@
+[project]
+name = "prevelop"
+version = "2.0.0"
+description = "Python framework for clustering mixed-type manufacturing data"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+    { name = "Kaspar Bunne" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "gower>=0.1.2",
+    "hdbscan>=0.8.40",
+    "matplotlib>=3.9",
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "scikit-learn>=1.5",
+    "scikit-learn-extra>=0.3",
+    "scipy>=1.14",
+    "seaborn>=0.13",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+dashboard = [
+    "streamlit>=1.30",
+    "plotly>=5.18",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.backends"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/prevelop"]
